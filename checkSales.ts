@@ -20,14 +20,17 @@ const  discordSetup = async (): Promise<TextChannel> => {
   })
 }
 
-const buildMessage = (sale: any) => (
-  new Discord.MessageEmbed()
-	.setColor('#0099ff')
-	.setTitle(`${sale.asset.name} sold for ${ethers.utils.formatEther(sale.total_price || '0')} ETH`)
-	.setURL(sale.asset.permalink)
-  .setImage(sale.asset.image_url)
-	.setTimestamp(Date.parse(`${sale?.created_date}Z`))
-)
+const buildMessage = (sale: any) => {
+  const name = sale.asset.name || `#${sale.asset.token_id}`
+  return (
+    new Discord.MessageEmbed()
+      .setColor('#0099ff')
+      .setTitle(`${name} sold for ${ethers.utils.formatEther(sale.total_price || '0')} ETH`)
+      .setURL(sale.asset.permalink)
+      .setImage(sale.asset.image_url)
+      .setTimestamp(Date.parse(`${sale?.created_date}Z`))
+  )
+}
 
 async function main() {
   const channel = await discordSetup();
