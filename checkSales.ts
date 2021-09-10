@@ -28,7 +28,6 @@ const buildMessage = (sale: any) => {
       .setTitle(`${name} sold for ${ethers.utils.formatEther(sale.total_price || '0')} ETH`)
       .setURL(sale.asset.permalink)
       .setImage(sale.asset.image_url)
-      .setTimestamp(Date.parse(`${sale?.created_date}Z`))
   )
 }
 
