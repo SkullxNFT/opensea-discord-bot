@@ -1,20 +1,20 @@
 import 'dotenv/config';
-import Discord, { TextChannel } from 'discord.js';
+import Discord, { Client, TextChannel } from 'discord.js';
 import fetch from 'node-fetch';
 import { ethers } from "ethers";
 
 const OPENSEA_SHARED_STOREFRONT_ADDRESS = '0x495f947276749Ce646f68AC8c248420045cb7b5e';
 
-const discordBot = new Discord.Client();
-const  discordSetup = async (): Promise<TextChannel> => {
+const discordBotSales = new Discord.Client();
+const discordBotMain = new Discord.Client();
+const  discordSetup = async (client: Client, channelIdEnvVar: string): Promise<TextChannel> => {
   return new Promise<TextChannel>((resolve, reject) => {
-    ['DISCORD_BOT_TOKEN', 'DISCORD_CHANNEL_ID'].forEach((envVar) => {
+    ['DISCORD_BOT_TOKEN', channelIdEnvVar].forEach((envVar) => {
       if (!process.env[envVar]) reject(`${envVar} not set`)
     })
-  
-    discordBot.login(process.env.DISCORD_BOT_TOKEN);
-    discordBot.on('ready', async () => {
-      const channel = await discordBot.channels.fetch(process.env.DISCORD_CHANNEL_ID!);
+    client.login(process.env.DISCORD_BOT_TOKEN);
+    client.on('ready', async () => {
+      const channel = await client.channels.fetch(process.env[channelIdEnvVar]!);
       resolve(channel as TextChannel);
     });
   })
@@ -32,10 +32,16 @@ const buildMessage = (sale: any) => {
 }
 
 async function main() {
-  const channel = await discordSetup();
+  const mainChannelMinSale = process.env.DISCORD_MAIN_CHANNEL_MIN_SALE
+
+  const salesChannel = await discordSetup(discordBotSales,'DISCORD_SALES_CHANNEL_ID');
+  let mainChannel;
+  if (mainChannelMinSale) {
+    mainChannel = await discordSetup(discordBotMain,'DISCORD_MAIN_CHANNEL_ID');
+  }
   const seconds = process.env.SECONDS ? parseInt(process.env.SECONDS) : 3_600;
   const hoursAgo = (Math.round(new Date().getTime() / 1000) - (seconds)); // in the last hour, run hourly?
-  
+
   const params = new URLSearchParams({
     offset: '0',
     event_type: 'successful',
@@ -54,7 +60,17 @@ async function main() {
   return await Promise.all(
     openSeaResponse?.asset_events?.reverse().map(async (sale: any) => {
       const message = buildMessage(sale);
-      return channel.send(message)
+
+      const salePrice = ethers.utils.formatEther(sale.total_price || '0')
+      if (
+        mainChannel &&
+        mainChannelMinSale &&
+        parseFloat(mainChannelMinSale) <= parseFloat(salePrice)
+      ) {
+        await mainChannel.send(message);
+      }
+
+      return salesChannel.send(message)
     })
   );   
 }

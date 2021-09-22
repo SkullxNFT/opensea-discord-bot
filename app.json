@@ -18,8 +18,16 @@
       "description": "The auth token for a Discord bot",
       "required": true
     },
-    "DISCORD_CHANNEL_ID": {
-      "description": "Your Discord channel ID (snowflake), i.e. 694927656805859499, where your Bot has access and will post",
+    "DISCORD_SALES_CHANNEL_ID": {
+      "description": "Your Discord sales channel ID (snowflake), i.e. 694927656805859499, where your Bot has access and will post",
+      "required": false
+    },
+    "DISCORD_MAIN_CHANNEL_ID": {
+      "description": "Your Discord main channel ID (snowflake), i.e. 694927656805859499, where your Bot has access and will post",
+      "required": false
+    },
+    "DISCORD_MAIN_CHANNEL_MIN_SALE": {
+      "description": "Minimum ETH sale value to be used for posting in main channel",
       "required": false
     },
     "SECONDS": {
