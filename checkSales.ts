@@ -7,7 +7,7 @@ const OPENSEA_SHARED_STOREFRONT_ADDRESS = '0x495f947276749Ce646f68AC8c248420045c
 
 const discordBotSales = new Discord.Client();
 const discordBotMain = new Discord.Client();
-const  discordSetup = async (client: Client, channelIdEnvVar: string): Promise<TextChannel> => {
+const discordSetup = async (client: Client, channelIdEnvVar: string): Promise<TextChannel> => {
   return new Promise<TextChannel>((resolve, reject) => {
     ['DISCORD_BOT_TOKEN', channelIdEnvVar].forEach((envVar) => {
       if (!process.env[envVar]) reject(`${envVar} not set`)
@@ -34,10 +34,10 @@ const buildMessage = (sale: any) => {
 async function main() {
   const mainChannelMinSale = process.env.DISCORD_MAIN_CHANNEL_MIN_SALE
 
-  const salesChannel = await discordSetup(discordBotSales,'DISCORD_SALES_CHANNEL_ID');
+  const salesChannel = await discordSetup(discordBotSales, 'DISCORD_SALES_CHANNEL_ID');
   let mainChannel;
   if (mainChannelMinSale) {
-    mainChannel = await discordSetup(discordBotMain,'DISCORD_MAIN_CHANNEL_ID');
+    mainChannel = await discordSetup(discordBotMain, 'DISCORD_MAIN_CHANNEL_ID');
   }
   const seconds = process.env.SECONDS ? parseInt(process.env.SECONDS) : 3_600;
   const hoursAgo = (Math.round(new Date().getTime() / 1000) - (seconds)); // in the last hour, run hourly?
@@ -46,7 +46,7 @@ async function main() {
     offset: '0',
     event_type: 'successful',
     only_opensea: 'false',
-    occurred_after: hoursAgo.toString(), 
+    occurred_after: hoursAgo.toString(),
     collection_slug: process.env.COLLECTION_SLUG!,
   })
 
@@ -55,8 +55,15 @@ async function main() {
   }
 
   const openSeaResponse = await fetch(
-    "https://api.opensea.io/api/v1/events?" + params).then((resp) => resp.json());
-    
+    "https://api.opensea.io/api/v1/events?" + params,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': `${process.env.OPENSEA_API_KEY}`
+      },
+    }
+  ).then((resp) => resp.json());
+
   return await Promise.all(
     openSeaResponse?.asset_events?.reverse().map(async (sale: any) => {
       const message = buildMessage(sale);
@@ -72,11 +79,11 @@ async function main() {
 
       return salesChannel.send(message)
     })
-  );   
+  );
 }
 
 main()
-  .then((res) =>{ 
+  .then((res) => {
     if (!res.length) console.log("No recent sales")
     process.exit(0)
   })
