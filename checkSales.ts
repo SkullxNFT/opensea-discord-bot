@@ -21,13 +21,28 @@ const discordSetup = async (client: Client, channelIdEnvVar: string): Promise<Te
 }
 
 const buildMessage = (sale: any) => {
-  const name = sale.asset.name || `#${sale.asset.token_id}`
+  const isBundle = !sale.asset && sale.asset_bundle?.assets.length > 0;
+
+  let name;
+  let url;
+  let image;
+
+  if (isBundle) {
+    name = `Bundle of ${sale.quantity}`
+    url = sale.asset_bundle.permalink;
+    image = sale.asset_bundle.assets[0].image_url;
+  } else {
+    name = sale.asset.name || `#${sale.asset.token_id}`;
+    url = sale.asset.permalink;
+    image = sale.asset.image_url;
+  }
+
   return (
     new Discord.MessageEmbed()
       .setColor('#0099ff')
       .setTitle(`${name} sold for ${ethers.utils.formatEther(sale.total_price || '0')} ETH`)
-      .setURL(sale.asset.permalink)
-      .setImage(sale.asset.image_url)
+      .setURL(url)
+      .setImage(image)
   )
 }
 
