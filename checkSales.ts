@@ -55,13 +55,12 @@ async function main() {
     mainChannel = await discordSetup(discordBotMain, 'DISCORD_MAIN_CHANNEL_ID');
   }
   const seconds = process.env.SECONDS ? parseInt(process.env.SECONDS) : 3_600;
-  const hoursAgo = (Math.round(new Date().getTime() / 1000) - (seconds)); // in the last hour, run hourly?
+  // milliseconds format (same as opensea)
+  const sinceTimestamp = (Math.round(new Date().getTime() / 1000) - (seconds)) * 1000;
 
   const params = new URLSearchParams({
-    offset: '0',
     event_type: 'successful',
     only_opensea: 'false',
-    occurred_after: hoursAgo.toString(),
     collection_slug: process.env.COLLECTION_SLUG!,
   })
 
@@ -80,7 +79,13 @@ async function main() {
   ).then((resp) => resp.json());
 
   return await Promise.all(
-    openSeaResponse?.asset_events?.reverse().map(async (sale: any) => {
+    openSeaResponse?.asset_events
+      ?.filter(event => {
+        const timestamp = new Date(event.transaction.timestamp).getTime();
+        return timestamp >= sinceTimestamp
+      })
+      .reverse()
+      .map(async (sale: any) => {
       const message = buildMessage(sale);
 
       const salePrice = ethers.utils.formatEther(sale.total_price || '0')
